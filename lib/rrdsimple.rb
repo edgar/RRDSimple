@@ -8,7 +8,6 @@ class RRDSimple
     @step = opts[:step]
     @debug = opts[:debug] || false
     @db = opts[:db] || Redis.new
-    @current = nil
   end
 
   def time_epoch
@@ -41,21 +40,19 @@ class RRDSimple
   def epoch(set)
     current_e = time_epoch
     last_e = last_epoch(set)
-    now = set + ":" + current_e.to_s
-    if now != @current and current_e != last_e
-      debug [:new_epoch, current_e]
-      [(Time.now.to_i / @step - last_e).abs, @buckets].min.times do |n|
+    if current_e != last_e
+      time_now = Time.now.utc.to_i / @step
+      [(time_now - last_e).abs, @buckets].min.times do |n|
         clear_bucket(epochs_ago(set, n))
       end
-      @current = now
-      @db.set(last_epoch_key(set), Time.now.to_i / @step)
+      @db.set(last_epoch_key(set), time_now)
     end
-    @current
+    "#{set}:#{current_e}"
   end
 
-  def incr(set, key, val=1)
-    debug [:incr, epoch(set), val, key]
-    @db.incr(epoch(set), val, key).to_i
+  def incr(set, val=1)
+    debug [:incr, epoch(set), val]
+    @db.incrby(epoch(set), val).to_i
   end
 
   def set(set, key, val)
@@ -64,6 +61,7 @@ class RRDSimple
   end
 
   def clear(set)
+    @db.del(last_epoch_key(set))
     buckets(set){|b| clear_bucket(b)}
   end
 
@@ -74,7 +72,7 @@ class RRDSimple
       @db.del(b)
     end
 
-    def debug(msg); p msg if @debug; end
+    def debug(msg); puts msg if @debug; end
 
 end
 

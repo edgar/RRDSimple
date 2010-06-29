@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 require 'rrdsimple'
 require 'spec'
 require 'spec/autorun'
-require 'timecop'
+require 'delorean'
 require 'ruby-debug'
 
 def redis
@@ -11,6 +11,7 @@ def redis
 end
 
 Spec::Runner.configure do |config|
+  config.include Delorean
   config.after :suite do
     redis.flushdb
   end
