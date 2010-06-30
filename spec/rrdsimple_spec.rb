@@ -35,6 +35,12 @@ describe "RRDSimple" do
     redis.get('k:0').to_i.should == 4
     # The epoch should be consistent
     redis.get('k:epoch').to_i.should == jan01.to_i / 60
+    v = rr.values('k')
+    v.size.should == 1
+    v[0][:value].should == 4
+    # The following to assertion are equivalent
+    v[0][:epoch].should == jan01.to_i / 60
+    Time.at(v[0][:epoch]*60).should == jan01
 
     jump 60 # jump one minute
     rr.incr("k").should == 1
@@ -45,6 +51,18 @@ describe "RRDSimple" do
     redis.get('k:1').to_i.should == 2
     # The epoch should be consistent
     redis.get('k:epoch').to_i.should == (jan01 + 60).to_i / 60
+    v = rr.values('k')
+    v.size.should == 2
+
+    v[0][:value].should == 2
+    # The following to assertion are equivalent
+    v[0][:epoch].should == (jan01 + 60).to_i / 60
+    Time.at(v[0][:epoch]*60).should == jan01 + 60
+
+    v[1][:value].should == 4
+    # The following to assertion are equivalent
+    v[1][:epoch].should == jan01.to_i / 60
+    Time.at(v[1][:epoch]*60).utc.should == jan01
 
 
     jump 120 # jump two minute
@@ -58,6 +76,10 @@ describe "RRDSimple" do
     redis.get('k:3').to_i.should == 2
     # The epoch should be consistent
     redis.get('k:epoch').to_i.should == (jan01 + 60 + 120).to_i / 60
+
+
+jump 60*30
+
 
     rr.clear('k')
     redis.exists("k:epoch").should be_false

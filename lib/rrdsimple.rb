@@ -34,17 +34,42 @@ class RRDSimple
     last_epoch(set) % @buckets
   end
 
-  def epochs_ago(k, num)
-    b = current_bucket-num
+  def bucket_key(k,i)
+    "#{k}:#{i}"
+  end
+
+  def bucket(k,i)
+    @db.get(bucket_key(k,i)).to_i
+  end
+
+  def relative_bucket(value, i)
+    b = value - i
     b = (b < 0) ? @buckets + b : b
-    "#{k}:#{b}"
+  end
+
+  def epochs_ago(k, num)
+    bucket_key(k, relative_bucket(current_bucket,num))
   end
 
   def buckets(k)
     a = []
     i = 0
+    last_b = last_bucket(k)
     while (i < @buckets) do
-      a.push epochs_ago(k, i)
+      a.push bucket_key(k,relative_bucket(last_b,i))
+      i += 1
+    end
+    a
+  end
+
+  def values(k)
+    a = []
+    i = 0
+    last_e = last_epoch(k)
+    last_b = last_bucket(k)
+    while (i < @buckets) do
+      v = bucket(k,relative_bucket(last_b,i))
+      a.push({:value => v, :epoch => last_e - i}) if v != 0
       i += 1
     end
     a
@@ -59,7 +84,7 @@ class RRDSimple
       end
       set_last_epoch(k, current_e)
     end
-    "#{k}:#{current_bucket}"
+    bucket_key(k, current_bucket)
   end
 
   def incr(k, val=1)
