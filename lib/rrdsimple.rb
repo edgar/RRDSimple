@@ -10,59 +10,71 @@ class RRDSimple
     @db = opts[:db] || Redis.new
   end
 
-  def time_epoch
-    (Time.now.utc.to_i / @step) % @buckets
+  def current_epoch
+    Time.now.utc.to_i / @step
   end
 
-  def epochs_ago(set, num)
-    b = time_epoch-num
+  def current_bucket
+    current_epoch % @buckets
+  end
+
+  def last_epoch_key(k)
+    "#{k}:epoch"
+  end
+
+  def last_epoch(k)
+    @db.get(last_epoch_key(k)).to_i
+  end
+
+  def set_last_epoch(k,v = Time.now.utc.to_i)
+    @db.set(last_epoch_key(k), v)
+  end
+
+  def last_bucket(set)
+    last_epoch(set) % @buckets
+  end
+
+  def epochs_ago(k, num)
+    b = current_bucket-num
     b = (b < 0) ? @buckets + b : b
-    "#{set}:#{b}"
+    "#{k}:#{b}"
   end
 
-  def buckets(set)
+  def buckets(k)
     a = []
     i = 0
     while (i < @buckets) do
-      a.push epochs_ago(set, v)
+      a.push epochs_ago(k, i)
+      i += 1
     end
     a
   end
 
-  def last_epoch_key(set)
-    "#{set}:epoch"
-  end
-
-  def last_epoch(set)
-    @db.get(last_epoch_key(set)).to_i
-  end
-
-  def epoch(set)
-    current_e = time_epoch
-    last_e = last_epoch(set)
+  def epoch(k)
+    current_e = current_epoch
+    last_e = last_epoch(k)
     if current_e != last_e
-      time_now = Time.now.utc.to_i / @step
-      [(time_now - last_e).abs, @buckets].min.times do |n|
-        clear_bucket(epochs_ago(set, n))
+      [(current_e - last_e).abs, @buckets].min.times do |n|
+        clear_bucket(epochs_ago(k, n))
       end
-      @db.set(last_epoch_key(set), time_now)
+      set_last_epoch(k, current_e)
     end
-    "#{set}:#{current_e}"
+    "#{k}:#{current_bucket}"
   end
 
-  def incr(set, val=1)
-    debug [:incr, epoch(set), val]
-    @db.incrby(epoch(set), val).to_i
+  def incr(k, val=1)
+    debug [:incr, epoch(k), val]
+    @db.incrby(epoch(k), val).to_i
   end
 
-  def set(set, key, val)
-    debug [:set, epoch(set), val, key]
-    @db.set(epoch(set), val, key)
+  def set(k, val)
+    debug [:set, epoch(k), val]
+    @db.set(epoch(k), val)
   end
 
-  def clear(set)
-    @db.del(last_epoch_key(set))
-    buckets(set){|b| clear_bucket(b)}
+  def clear(k)
+    @db.del(last_epoch_key(k))
+    buckets(k){|b| clear_bucket(b)}
   end
 
   protected
