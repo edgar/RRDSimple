@@ -4,8 +4,8 @@ require 'rake'
 begin
   require "jeweler"
   Jeweler::Tasks.new do |gemspec|
-    gemspec.name = "rcircular"
-    gemspec.summary = "A kind of Round robin database pattern via Redis"
+    gemspec.name = "rrdsimple"
+    gemspec.summary = "A simple round robin database pattern via Redis"
     gemspec.description = gemspec.summary
     gemspec.email = "edgargonzalez@gmail.com"
     gemspec.homepage = "http://github.com/edgar/RRDSimple"
