@@ -1,19 +1,32 @@
 require 'rubygems'
 require 'rake'
 
+$:.unshift File.join(File.dirname(__FILE__), 'lib')
+require 'rrdsimple'
+
+GEM = 'rrdsimple'
+GEM_NAME = 'rrdsimple'
+GEM_VERSION = RRDSimple::VERSION
+AUTHORS = ['Edgar Gonzalez']
+EMAIL = "edgargonzalez@gmail.com"
+HOMEPAGE = "http://github.com/edgar/RRDSimple"
+SUMMARY = "A simple round robin database pattern via Redis"
+
 begin
   require "jeweler"
   Jeweler::Tasks.new do |gemspec|
-    gemspec.name = "rrdsimple"
-    gemspec.summary = "A simple round robin database pattern via Redis"
+    gemspec.name = GEM
+    gemspec.version = GEM_VERSION
+    gemspec.summary = SUMMARY
+    gemspec.platform = Gem::Platform::RUBY
     gemspec.description = gemspec.summary
-    gemspec.email = "edgargonzalez@gmail.com"
-    gemspec.homepage = "http://github.com/edgar/RRDSimple"
-    gemspec.authors = ["Edgar Gonzalez"]
+    gemspec.email = EMAIL
+    gemspec.homepage = HOMEPAGE
+    gemspec.authors = AUTHORS
     gemspec.required_ruby_version = ">= 1.8"
     gemspec.add_dependency("redis", ">= 2.0.3")
     gemspec.add_development_dependency "rspec", ">= 1.3.0"
-    gemspec.rubyforge_project = "rrdsimple"
+    gemspec.rubyforge_project = GEM
   end
 
   Jeweler::GemcutterTasks.new

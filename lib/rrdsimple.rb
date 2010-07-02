@@ -3,6 +3,8 @@ gem 'redis', '>= 2.0.3'
 require 'redis'
 
 class RRDSimple
+  VERSION = "0.0.1"
+
   def initialize(opts)
     @buckets = opts[:buckets]
     @step = opts[:step]
